@@ -1,5 +1,7 @@
 CC = gcc -Wall
 
+all: getQEI setMotor getCurrent setPID
+
 getQEI: getQEI.c DMCC.c DMCC.h 
 		$(CC) -o getQEI getQEI.c DMCC.c
 
