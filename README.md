@@ -16,6 +16,23 @@ opkg install python-distutils
 
 python setupDMCC.py install
 
+
+To test the setMotor command in python, do the following:
+
+import DMCC
+
+DMCC.setMotor(0,1,5000)
+
+(turns on motor 1 on board 0 with 5000 power)
+
+DMCC.setMotor(0,1,-7000)
+
+(reverse direction with 7000 power)
+
+DMCC.setMotor(0,1,0)
+
+(turn off the motor)
+
 If you run into any problems, feel free to email us at support@exadler.com
 
 
