@@ -11,6 +11,7 @@ This version includes preliminary code for the python interface.
 To use the python interface, run the following commands on your Beaglebone:
 
 opkg update
+
 opkg install python-distutils
 
 python setupDMCC.py install
