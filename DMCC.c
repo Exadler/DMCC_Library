@@ -141,7 +141,7 @@ char *getNumberOfBytes(int fd, int num, unsigned char addr)
 
     // Get bytes at the given address
     int i = 0;
-    while(i <= num) {
+    while(i < num) {
         result[i] = (char)(getByte(fd, addr+i));
         i++;
     }
