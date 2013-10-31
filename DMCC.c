@@ -527,7 +527,7 @@ void setTargetPos(int fd, unsigned int pos, unsigned int motor)
     putByte(fd, (start + 2), ((unsigned char)((pos >> 16) & 0xff)));
     putByte(fd, (start + 3), ((unsigned char)((pos >> 24) & 0xff)));
 
-    // Execute the write command
+    // Send the command to start the PID mode
     putByte(fd, 0xff, ((unsigned char) motor)); 
 }
 
@@ -548,7 +548,7 @@ void setAllTargetPos(int fd, unsigned int pos)
     putByte(fd, 0x26, ((unsigned char)((pos >> 16) & 0xff)));
     putByte(fd, 0x27, ((unsigned char)((pos >> 24) & 0xff)));
 
-    // Execute the write command
+    // Send the command to start the PID mode
     putByte(fd, 0xff, 0x13);
 }
 
@@ -595,7 +595,7 @@ void setTargetVel(int fd, unsigned int vel, int motor)
     putByte(fd, start, ((unsigned char)(vel16 & 0xff)));
     putByte(fd, (start+1), ((unsigned char)((vel16 >> 8) & 0xff)));
 
-    // Execute the write command
+    // Send the command to start the PID mode
     putByte(fd, 0xff, ((unsigned char) motor));
         
 }
@@ -615,7 +615,7 @@ void setAllTargetVel(int fd, int vel)
     putByte(fd, 0x2A, ((unsigned char)(vel16 & 0xff)));
     putByte(fd, 0x2B, ((unsigned char)((vel16 >> 8) & 0xff)));
 
-    // Execute the write command
+	// Send the command to start the PID mode
     putByte(fd, 0xff, 0x23);
 
 }
