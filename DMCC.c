@@ -573,7 +573,7 @@ int getTargetVel(int fd, unsigned int motor)
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             motor - motor number desired
 //             velocity - motor velocity
-void setTargetVel(int fd, unsigned int vel, int motor)
+void setTargetVel(int fd, int vel, int motor)
 {
     short int vel16 = (short int) vel;
     unsigned char start;
