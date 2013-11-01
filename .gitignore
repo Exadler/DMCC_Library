@@ -1,3 +1,11 @@
+build/
+
+# Binary files
+getQEI
+getCurrent
+setMotor
+setPID
+
 #################
 ## Eclipse
 #################

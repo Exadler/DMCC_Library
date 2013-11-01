@@ -262,4 +262,9 @@ void getPIDConstants(int fd, unsigned int posOrVel, int *P,
 //             motor - motor number desired
 void setPIDConstants(int fd, unsigned int posOrVel, int P, 
                             int I, int D, unsigned int motor);
+
+// setDefaultPIDCOnstants - Set the PID constants to a default
+//
+void setDefaultPIDConstants(int fd);
+
 #endif

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 {
     // Prints usage statement
     if (argc != 8) {
-        printf("usage: ./setPID <board number> <target> <pos_vel> ");
+        printf("usage: ./setPID <board number> <motor> <pos_vel> ");
         printf("<P> <I> <D> <motor>\n");
         printf("       <board number> is [0-3] for placement of cape\n");
         printf("       <target> is the target QEI position or velocity\n");

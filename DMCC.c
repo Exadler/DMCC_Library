@@ -302,13 +302,20 @@ int DMCCstart(unsigned char capeAddr)
         exit(1);
     }
 
+    return fd;
+}
+
+
+void setDefaultPIDConstants(int fd)
+{
     //Default PID constants
     setPIDConstants(fd, 1, -19200, -8000, -150, 1);
     setPIDConstants(fd, 1, -19200, -8000, -150, 1);
     setPIDConstants(fd, 0, -5248, -75, -500, 1);
     setPIDConstants(fd, 0, -10000, -75, -500, 2);
-    return fd;
 }
+
+
 
 void DMCCend(int session)
 {
@@ -424,7 +431,7 @@ void setMotorPower(int fd, unsigned int motor, int pwm)
     // Set power to given motor
     putByte(fd, (motor * 2), ((unsigned char)(pwm16 & 0xff)));
     putByte(fd, ((motor * 2) + 1), (unsigned char) ((pwm16 & 0xff00) >> 8));
-    printf("Setting pwm to %d\n",pwm);
+//    printf("Setting pwm to %d\n",pwm);
 
     // Send the set motor power command
     putByte(fd, 0xff, ((unsigned char) motor));
@@ -716,7 +723,7 @@ void moveUntilPos(int fd, unsigned int pos, unsigned int motor)
         if (error < 0) {
             error *= -1;
         }
-        printf("Error = %d\n", error);
+        // printf("Error = %d\n", error);
     }
 }
 
