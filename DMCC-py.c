@@ -211,6 +211,101 @@ dmcc_getQEIVel(PyObject *self, PyObject *args)
     return Py_BuildValue("i", vel);
 }
 
+static PyObject *
+dmcc_setTargetPos(PyObject *self, PyObject *args)
+{
+    unsigned int nBoard;
+    unsigned int nMotor;
+    unsigned int nPosition;
+    // Make sure szErrorMsg is not on the stack
+    // -- downside is that we could have concurrency issues with different
+    // threads, but you know what, there should only be one error message
+    // at a time.  If you have it from multiple threads, your code is fubar'ed 
+    // anyways!
+    static char szErrorMsg[80];
+
+    // DMCC.setTargetPos takes 3 arguments: board number, motor number, Position
+    if (!PyArg_ParseTuple(args, "III:setMotor", &nBoard, &nMotor, &nPosition)) {
+        return NULL;
+    }
+    // validate the board number
+    if (nBoard > 3) {
+        sprintf(szErrorMsg, "Board number %d is invalid.  Board number must be between 0 and 3.",
+                nBoard);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    // validate the motor number
+    if ((nMotor < 1) || (nMotor > 2)) {
+        sprintf(szErrorMsg, "Motor number %d is invalid.  Motor number must be 1 or 2.",
+                nMotor);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+
+    int session;
+    session = DMCCstart(nBoard);
+    setTargetPos(session, nMotor, nPosition);
+    DMCCend(session);
+
+    return Py_BuildValue("i", 0);
+}
+
+static PyObject *
+dmcc_setPIDConstants(PyObject *self, PyObject *args)
+{
+    unsigned int nBoard;
+    unsigned int nMotor;
+    unsigned int posOrVel;
+    int P;
+    int I;
+    int D; 
+    
+    
+    // Make sure szErrorMsg is not on the stack
+    // -- downside is that we could have concurrency issues with different
+    // threads, but you know what, there should only be one error message
+    // at a time.  If you have it from multiple threads, your code is fubar'ed 
+    // anyways!
+    static char szErrorMsg[80];
+
+    // DMCC.getQEI takes 6 arguments: board number, motor number, posOrVel, P, I, D
+    if (!PyArg_ParseTuple(args, "IIIiii:getQEI", &nBoard, &nMotor, &posOrVel, &P, &I, &D)) {
+        return NULL;
+    }
+    // validate the board number
+    if (nBoard > 3) {
+        sprintf(szErrorMsg, "Board number %d is invalid.  Board number must be between 0 and 3.",
+                nBoard);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    // validate the motor number
+    if ((nMotor < 1) || (nMotor > 2)) {
+        sprintf(szErrorMsg, "Motor number %d is invalid.  Motor number must be 1 or 2.",
+                nMotor);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    
+    if (posOrVel > 1) {
+        sprintf(szErrorMsg, "posOrVal %d is invalid.  posOrVal 0 or 1",
+                nMotor);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    
+/*
+    int session;
+    unsigned int nQEI;
+    
+    session = DMCCstart(nBoard);
+    nQEI = getQEI(session, nMotor);
+    DMCCend(session);
+*/    
+    return Py_BuildValue("i", 0);
+}
+
 
 static PyMethodDef
 module_functions[] = {

@@ -49,6 +49,7 @@ void sig_handler(int sig)
 {
     setMotorPower(session, 1, 0);
     setMotorPower(session, 2, 0);
+    DMCCend(session);
     exit(1);
 }
 
@@ -90,17 +91,18 @@ int main(int argc, char *argv[])
     resetQEI(session, nMotor);
 
     // Set the PID Constants
-    setPIDConstants(session, indicator, P, I, D, nMotor);
+    setPIDConstants(session, nMotor, indicator, P, I, D);
    
     // Check if the user has specified target position or velocity
     // NOTE: no error values will print during this time
     if (indicator == 0) { 
-        moveUntilPos(session, target, nMotor);
+        moveUntilPos(session, nMotor, target);
     } else if (indicator == 1) {
-        moveUntilVel(session, target, nMotor);
+        moveUntilVel(session, nMotor, target);
     } else {
         setMotorPower(session, nMotor, 0);
         printf("Error: position or velocity not correctly specified\n");
+        DMCCend(session);
         return 1;
     }
 
@@ -114,6 +116,7 @@ int main(int argc, char *argv[])
         } else {
             setMotorPower(session, nMotor, 0);
             printf("Error: position or velocity not correctly specified\n");
+            DMCCend(session);
             return 1;
         }
         current = getMotorCurrent(session, nMotor);

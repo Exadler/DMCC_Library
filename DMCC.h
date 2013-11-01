@@ -125,6 +125,17 @@ unsigned int getMotorVoltage(int fd);
 //          always returns 0 if an error occurs
 unsigned int getTargetPos(int fd, unsigned int motor);
 
+// setTargetPos - Sets the target position for the desired motor
+//                Prints an error if there is a problem
+//                  communicating to motor
+// Parameters: fd - connection to the board (value returned from DMCCstart)
+//             motor - motor number desired
+//             position - motor position
+void setTargetPos(int fd, unsigned int motor, unsigned int pos);
+
+
+
+
 // getTargetVel - Gets the target velocity for the desired motor
 //                Prints an error if the target velocity for the
 //                      motor is not received
@@ -133,6 +144,15 @@ unsigned int getTargetPos(int fd, unsigned int motor);
 // Returns: Target velocity for given motor
 //          always returns 0 if an error occurs
 int getTargetVel(int fd, unsigned int motor);
+
+// setTargetVel - Sets the target velocity for the desired motor
+//                Prints an error if there is a problem
+//                  communicating to motor
+// Parameters: fd - connection to the board (value returned from DMCCstart)
+//             motor - motor number desired
+//             velocity - motor velocity
+void setTargetVel(int fd, unsigned int motor, int vel);
+
 
 // getMotorDir - Gets the direction for the desired motor
 //               Prints an error if the motor dir is not received
@@ -187,7 +207,7 @@ void DMCCwaitSec(unsigned int seconds);
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             pos - desired position for motor
 //             motor - motor number desired
-void moveUntilPos(int fd, unsigned int pos, unsigned int motor);
+void moveUntilPos(int fd, unsigned int motor, unsigned int pos );
 
 // moveUntilTime - Powers on a motor for a given time period
 //                Prints an error if there is a problem
@@ -196,8 +216,8 @@ void moveUntilPos(int fd, unsigned int pos, unsigned int motor);
 //             time - desired wait time in microseconds
 //             motor - motor number desired
 //             power - power level for motor
-void moveUntilTime(int fd, unsigned int time, 
-                        unsigned int motor, unsigned int power);
+void moveUntilTime(int fd, unsigned int motor, 
+                     unsigned int power, unsigned int time );
 
 // moveUntilVel - Powers on a motor until it has reached the desired velocity
 //                Prints an error if there is a problem
@@ -205,7 +225,7 @@ void moveUntilTime(int fd, unsigned int time,
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             vel - desired velocity for motor
 //             motor - motor number desired
-void moveUntilVel(int fd, int vel, unsigned int motor);
+void moveUntilVel(int fd, unsigned int motor, int vel );
 
 // moveAllUntilPos - Power on both motors until they have both reached
 //                      the desired position
@@ -221,7 +241,7 @@ void moveAllUntilPos(int fd, unsigned int pos);
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             time - desired wait time in microseconds
 //             power - power level for motor
-void moveAllUntilTime(int fd, unsigned int time, unsigned int power);
+void moveAllUntilTime(int fd, unsigned int power, unsigned int time );
 
 // moveAllUntilPos - Power on both motors until they have both reached
 //                      the desired velocity
@@ -247,8 +267,8 @@ void moveAllUntilvel(int fd, int vel);
 //            I - constant for I in PID algorithm
 //            D - constant for D in PID algorithm
 //            motor - motor number desired
-void getPIDConstants(int fd, unsigned int posOrVel, int *P, 
-                            int *I, int *D, unsigned int motor);
+void getPIDConstants(int fd, unsigned int motor, unsigned int posOrVel, 
+                            int *P, int *I, int *D);
 
 // setPIDConstants - Set the PID constants for the motors
 //                   Prints an error if there is a problem 
@@ -260,8 +280,8 @@ void getPIDConstants(int fd, unsigned int posOrVel, int *P,
 //             I - constant for I in the PID algorithm
 //             D - constant for D in the PID algorithm
 //             motor - motor number desired
-void setPIDConstants(int fd, unsigned int posOrVel, int P, 
-                            int I, int D, unsigned int motor);
+void setPIDConstants(int fd, unsigned int motor, unsigned int posOrVel, 
+                            int P, int I, int D);
 
 // setDefaultPIDCOnstants - Set the PID constants to a default
 //

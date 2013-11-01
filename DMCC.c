@@ -309,10 +309,10 @@ int DMCCstart(unsigned char capeAddr)
 void setDefaultPIDConstants(int fd)
 {
     //Default PID constants
-    setPIDConstants(fd, 1, -19200, -8000, -150, 1);
-    setPIDConstants(fd, 1, -19200, -8000, -150, 1);
-    setPIDConstants(fd, 0, -5248, -75, -500, 1);
-    setPIDConstants(fd, 0, -10000, -75, -500, 2);
+    setPIDConstants(fd, 1, 1, -19200, -8000, -150);
+    setPIDConstants(fd, 2, 1, -19200, -8000, -150);
+    setPIDConstants(fd, 1, 0, -5248, -75, -500);
+    setPIDConstants(fd, 2, 0, -10000, -75, -500);
 }
 
 
@@ -510,7 +510,7 @@ unsigned int getTargetPos(int fd, unsigned int motor)
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             motor - motor number desired
 //             position - motor position
-void setTargetPos(int fd, unsigned int pos, unsigned int motor)
+void setTargetPos(int fd, unsigned int motor, unsigned int pos)
 {
     unsigned char start;
 
@@ -580,7 +580,7 @@ int getTargetVel(int fd, unsigned int motor)
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             motor - motor number desired
 //             velocity - motor velocity
-void setTargetVel(int fd, int vel, int motor)
+void setTargetVel(int fd, unsigned int motor, int vel)
 {
     short int vel16 = (short int) vel;
     unsigned char start;
@@ -682,7 +682,7 @@ void moveUntilTime(int fd, unsigned int time,
     setMotorPower(fd, motor, 0);
 }
 
-void moveUntilPos(int fd, unsigned int pos, unsigned int motor)
+void moveUntilPos(int fd, unsigned int motor, unsigned int pos)
 {
     // Set the target position desired
     setTargetPos(fd, pos, motor);
@@ -727,7 +727,7 @@ void moveUntilPos(int fd, unsigned int pos, unsigned int motor)
     }
 }
 
-void moveUntilVel(int fd, int vel, unsigned int motor)
+void moveUntilVel(int fd, unsigned int motor, int vel)
 {
     // Set the target speed desired
     setTargetVel(fd, vel, motor);
@@ -851,7 +851,7 @@ void moveAllUntilVel(int fd, int vel)
     }
 }
 
-void moveAllUntilTime(int fd, unsigned int time, unsigned int power)
+void moveAllUntilTime(int fd, unsigned int power, unsigned int time)
 {
     setAllMotorPower(fd, power);
     usleep(time);
@@ -891,8 +891,8 @@ void returnPIDConstants(int fd, unsigned char addr, int *P, int *I, int *D)
     *D = result;
 }
 
-void getPIDConstants(int fd, unsigned int posOrVel, int *P,
-                            int *I, int *D, unsigned int motor) 
+void getPIDConstants(int fd, unsigned int motor, unsigned int posOrVel, 
+                        int *P, int *I, int *D ) 
 {
     if (motor == 1) {
         if (posOrVel == 0) {
@@ -936,8 +936,8 @@ void putPIDConstants(int fd, unsigned char addr, int P, int I, int D)
     putByte(fd, (addr+0x05), (unsigned char)((D & 0xff00)>>8));    
 }
 
-void setPIDConstants(int fd, unsigned int posOrVel, int P,
-                            int I, int D, unsigned int motor) 
+void setPIDConstants(int fd, unsigned int motor, unsigned int posOrVel, 
+                        int P, int I, int D) 
 {
     if (motor == 1) {
         if (posOrVel == 0) {
