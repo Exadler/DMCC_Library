@@ -582,6 +582,7 @@ int getTargetVel(int fd, unsigned int motor)
 //             velocity - motor velocity
 void setTargetVel(int fd, unsigned int motor, int vel)
 {
+
     short int vel16 = (short int) vel;
     unsigned char start;
 

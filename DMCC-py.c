@@ -269,8 +269,9 @@ dmcc_setPIDConstants(PyObject *self, PyObject *args)
     // anyways!
     static char szErrorMsg[80];
 
-    // DMCC.getQEI takes 6 arguments: board number, motor number, posOrVel, P, I, D
-    if (!PyArg_ParseTuple(args, "IIIiii:getQEI", &nBoard, &nMotor, &posOrVel, &P, &I, &D)) {
+    // DMCC.setPIDConstants takes 6 arguments: board number, motor number, posOrVel, P, I, D
+    if (!PyArg_ParseTuple(args, "IIIiii:setPIDConstants", &nBoard, &nMotor, 
+                            &posOrVel, &P, &I, &D)) {
         return NULL;
     }
     // validate the board number
@@ -290,21 +291,85 @@ dmcc_setPIDConstants(PyObject *self, PyObject *args)
     
     if (posOrVel > 1) {
         sprintf(szErrorMsg, "posOrVal %d is invalid.  posOrVal 0 or 1",
+                posOrVel);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    
+    if ((P > 32767) || (P < -32768)) {
+        sprintf(szErrorMsg, "P=%d is invalid.  P must be between -32768 and 32768",
+                P);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+
+    if ((I > 32767) || (I < -32768)) {
+        sprintf(szErrorMsg, "I=%d is invalid.  I must be between -32768 and 32768",
+                I);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    if ((D > 32767) || (D < -32768)) {
+        sprintf(szErrorMsg, "D=%d is invalid.  D must be between -32768 and 32768",
+                D);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    
+    int session;
+    
+    session = DMCCstart(nBoard);
+    setPIDConstants(session, nMotor, posOrVel, P, I, D);
+    DMCCend(session);
+
+    return Py_BuildValue("i", 0);
+}
+
+
+static PyObject *
+dmcc_setTargetVel(PyObject *self, PyObject *args)
+{
+    unsigned int nBoard;
+    unsigned int nMotor;
+    int nVel;
+    
+    
+    // Make sure szErrorMsg is not on the stack
+    // -- downside is that we could have concurrency issues with different
+    // threads, but you know what, there should only be one error message
+    // at a time.  If you have it from multiple threads, your code is fubar'ed 
+    // anyways!
+    static char szErrorMsg[80];
+
+    // DMCC.setTargetPos takes 3 arguments: board number, motor number, Position
+    if (!PyArg_ParseTuple(args, "III:setTargetVel", &nBoard, &nMotor, &nVel)) {
+        return NULL;
+    }
+    // validate the board number
+    if (nBoard > 3) {
+        sprintf(szErrorMsg, "Board number %d is invalid.  Board number must be between 0 and 3.",
+                nBoard);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    // validate the motor number
+    if ((nMotor < 1) || (nMotor > 2)) {
+        sprintf(szErrorMsg, "Motor number %d is invalid.  Motor number must be 1 or 2.",
                 nMotor);
         PyErr_SetString(PyExc_IndexError,szErrorMsg);
         return NULL;
     }
     
-/*
     int session;
-    unsigned int nQEI;
     
     session = DMCCstart(nBoard);
-    nQEI = getQEI(session, nMotor);
+    setTargetVel(session, nMotor, nVel);
     DMCCend(session);
-*/    
+
     return Py_BuildValue("i", 0);
 }
+
+
 
 
 static PyMethodDef
@@ -314,6 +379,9 @@ module_functions[] = {
     { "getMotorVoltageInt", dmcc_getMotorVoltageInt, METH_VARARGS, "Gets the Voltage (board) as int" },
     { "getQEI", dmcc_getQEI, METH_VARARGS, "Return the Quadrature Encoder value of the given (board, motor)" },
     { "getQEIVel", dmcc_getQEIVel, METH_VARARGS, "Return the Quadrature Encoder Velocity of the given (board, motor)" },
+    { "setPIDConstants", dmcc_setPIDConstants, METH_VARARGS, "Set the PID constants (board, motor, posOrVel, P, I, D)" },
+    { "setTargetPos", dmcc_setTargetPos, METH_VARARGS, "Set position target and turn on the motor with PID" },
+    { "setTargetVel", dmcc_setTargetVel, METH_VARARGS, "Set velocity target and turn on the motor with PID" },
     { NULL }
 };
 
