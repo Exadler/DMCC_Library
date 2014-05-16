@@ -27,6 +27,8 @@
 
 #include "DMCC.h"
 
+#define TIME_LIMIT 30   // Sets the timeout for 30seconds at maximum
+
 // This program allows users to adjust the PID parameters (PID tuning).
 // It should be used when there is motor overshoot, undershoot, 
 // and/or peaks (oscillations).  Repeat the adjustments until the response
@@ -85,43 +87,21 @@ int main(int argc, char *argv[])
     // Begin the session (open a connection to the board)
     session = DMCCstart(boardNum); 
 
-    int error;
-    unsigned int current;
-
     resetQEI(session, nMotor);
 
     // Set the PID Constants
     setPIDConstants(session, nMotor, indicator, P, I, D);
-   
+  
     // Check if the user has specified target position or velocity
-    // NOTE: no error values will print during this time
     if (indicator == 0) { 
-        moveUntilPos(session, nMotor, target);
+        moveUntilPos(session, nMotor, target, TIME_LIMIT);
     } else if (indicator == 1) {
-        moveUntilVel(session, nMotor, target);
+        moveUntilVel(session, nMotor, target, TIME_LIMIT);
     } else {
         setMotorPower(session, nMotor, 0);
         printf("Error: position or velocity not correctly specified\n");
         DMCCend(session);
-        return 1;
-    }
-
-    // Print out the error, to check the oscillation/overshoot
-    while(1) {
-        // Get error between QEI target
-        if (indicator == 0) {
-            error = (int)(target) - (int)(getQEI(session, nMotor));
-        } else if (indicator == 1) {
-            error = (int)(target) - (int)(getQEIVel(session, nMotor));
-        } else {
-            setMotorPower(session, nMotor, 0);
-            printf("Error: position or velocity not correctly specified\n");
-            DMCCend(session);
-            return 1;
-        }
-        current = getMotorCurrent(session, nMotor);
-        printf("Error = %d, Current = %u\n", error, current);
-        usleep(200000); 
+        return -1;
     }
 
     DMCCend(session);

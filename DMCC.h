@@ -50,6 +50,14 @@ void DMCCend(int session);
 //          -1 - if an error occurs
 int getVersionNumber(unsigned char capeAddr);
 
+// checkVersion - checks that the version of the cape matches the software
+//                version
+// Parameter: fd - connection to the board (value returned from DMCCstart)
+//            capeAddr - address of desired cape to check version number [0-3]
+// Returns: -1 - if the software and hardware versions do not match
+//           0 - otherwise
+int checkVersion(int fd, unsigned char capeAddr);
+
 // --------------------------
 // Quadrature Encoder Interface (QEI) functions
 // --------------------------
@@ -130,11 +138,16 @@ unsigned int getTargetPos(int fd, unsigned int motor);
 //                  communicating to motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             motor - motor number desired
-//             position - motor position
-void setTargetPos(int fd, unsigned int motor, unsigned int pos);
+//             pos - motor position
+void setTargetPos(int fd, unsigned int motor, int pos);
 
-
-
+// setAllTargetPos - Sets the target position for both motors
+//                Prints an error if there is a problem
+//                  communicating to motor
+// Parameters: fd - connection to the board (value returned from DMCCstart)
+//             pos1 - motor 1 position
+//             pos2 - motor 2 position
+void setAllTargetPos(int fd, int pos1, int pos2);
 
 // getTargetVel - Gets the target velocity for the desired motor
 //                Prints an error if the target velocity for the
@@ -153,6 +166,13 @@ int getTargetVel(int fd, unsigned int motor);
 //             velocity - motor velocity
 void setTargetVel(int fd, unsigned int motor, int vel);
 
+// setAllTargetVel - Sets the target velocity for both motors
+//                Prints an error if there is a problem
+//                  communicating to motor
+// Parameters: fd - connection to the board (value returned from DMCCstart)
+//             vel1 - motor 1 velocity
+//             vel2 - motor 2 velocity
+void setAllTargetVel(int fd, int vel1, int vel2);
 
 // getMotorDir - Gets the direction for the desired motor
 //               Prints an error if the motor dir is not received
@@ -168,13 +188,14 @@ int getMotorDir(int fd, unsigned int motor);
 //                      communicating to the motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             motor - motor number desired
-//             pwm - power level
+//             pwm - power level (ranges from -10000 to 10000)
 void setMotorPower(int fd, unsigned int motor, int pwm);
 
 // setAllMotorPower - Sets the power for all motors
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             pwm - power level
-void setAllMotorPower(int fd, int pwm);
+//             pwm1 - power level for motor 1 (ranges from -10000 to 10000)
+//             pwm2 - power level for motor 2 (ranges from -10000 to 10000)
+void setAllMotorPower(int fd, int pwm1, int pwm2);
 
 // setMotorDir - Sets the direction for the desired motor
 //               Prints an error if there is a problem
@@ -205,9 +226,12 @@ void DMCCwaitSec(unsigned int seconds);
 //                Prints an error if there is a problem 
 //                      communicating with the motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             pos - desired position for motor
 //             motor - motor number desired
-void moveUntilPos(int fd, unsigned int motor, unsigned int pos );
+//             pos - desired position for motor
+//             tLimit - time limit in seconds (maximum of 2147 seconds)
+// Return: -1 - if the position is not reached within the time limit allowed
+//          0 - otherwise
+int moveUntilPos(int fd, unsigned int motor, int pos, unsigned int tLimit);
 
 // moveUntilTime - Powers on a motor for a given time period
 //                Prints an error if there is a problem
@@ -215,41 +239,52 @@ void moveUntilPos(int fd, unsigned int motor, unsigned int pos );
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             time - desired wait time in microseconds
 //             motor - motor number desired
-//             power - power level for motor
-void moveUntilTime(int fd, unsigned int motor, 
-                     unsigned int power, unsigned int time );
+//             pwm - power level for motor (ranges from -10000 to 10000)
+void moveUntilTime(int fd, unsigned int motor, int pwm, unsigned int time);
 
 // moveUntilVel - Powers on a motor until it has reached the desired velocity
 //                Prints an error if there is a problem
 //                      communicating with the motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             vel - desired velocity for motor
 //             motor - motor number desired
-void moveUntilVel(int fd, unsigned int motor, int vel );
+//             vel - desired velocity for motor
+//             tLimit - time limit in seconds (maximum of 2147 seconds)
+// Return: -1 - if the position is not reached within the time limit allowed
+//          0 - otherwise
+int moveUntilVel(int fd, unsigned int motor, int vel, unsigned tLimit);
 
 // moveAllUntilPos - Power on both motors until they have both reached
 //                      the desired position
 //                   Prints an error if there is a problem
 //                      communicating with the motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             pos - desired position for motors
-void moveAllUntilPos(int fd, unsigned int pos);
+//             pos1 - desired position for motor1
+//             pos2 - desired position for motor2
+//             tLimit - time limit in seconds (maximum of 2147 seconds)
+// Return: -1 - if the position is not reached within the time limit allowed
+//          0 - otherwise
+int moveAllUntilPos(int fd, int pos1, int pos2, unsigned int tLimit);
 
 // moveAllUntilTime - Power on both motors for a given time period
 //                   Prints an error if there is a problem
 //                      communicating with the motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             time - desired wait time in microseconds
-//             power - power level for motor
-void moveAllUntilTime(int fd, unsigned int power, unsigned int time );
+//             pwm1 - power level for motor1
+//             pwm2 - power level for motor2
+void moveAllUntilTime(int fd, int pwm1, int pwm2, unsigned int time);
 
 // moveAllUntilPos - Power on both motors until they have both reached
 //                      the desired velocity
 //                   Prints an error if there is a problem
 //                      communicating with the motor
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             vel - desired velocity for motors
-void moveAllUntilvel(int fd, int vel);
+//             vel1 - desired velocity for motor 1
+//             vel2 - desired velocity for motor 2
+//             tLimit - time limit in seconds (maximum of 2147 seconds)
+// Return: -1 - if the position is not reached within the time limit allowed
+//          0 - otherwise
+int moveAllUntilVel(int fd, int vel1, int vel2, unsigned int tLimit);
 
 // ---------------------------
 // PID Constant Functions 

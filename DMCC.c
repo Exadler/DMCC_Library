@@ -32,9 +32,6 @@
 
 #include "DMCC.h"
 
-// The maximum number of seconds to wait before killing a program
-#define TIME_LIMIT 30
-
 char *Compatible_Versions[] = {"05", "06"};
 
 // ------------------------
@@ -290,21 +287,23 @@ int DMCCstart(unsigned char capeAddr)
         close(fd);
         exit(1);
     }
-   
-    int boardVer = getVersionNumber(capeAddr - 0x2c);
+	
+    return fd;
+}
+
+int checkVersion(int fd, unsigned char capeAddr)
+{
+	int boardVer = getVersionNumber(capeAddr - 0x2c);
     int softVer = checkID(fd, boardVer);
     if (softVer != 0) { 
         printf("Error: software version and board version are incompatible\n");
         printf("       Board version = %d, Software version = %d\n",
                 boardVer, softVer);
         printf("NOTE: if any version number is -1, the version is not found\n");
-        close(fd);
-        exit(1);
+		return -1;
     }
-
-    return fd;
+	return 0;
 }
-
 
 void setDefaultPIDConstants(int fd)
 {
@@ -314,8 +313,6 @@ void setDefaultPIDConstants(int fd)
     setPIDConstants(fd, 1, 0, -5248, -75, -500);
     setPIDConstants(fd, 2, 0, -10000, -75, -500);
 }
-
-
 
 void DMCCend(int session)
 {
@@ -437,29 +434,30 @@ void setMotorPower(int fd, unsigned int motor, int pwm)
     putByte(fd, 0xff, ((unsigned char) motor));
 }
 
-void setAllMotorPower(int fd, int pwm)
+void setAllMotorPower(int fd, int pwm1, int pwm2)
 {
-    short int pwm16 = (short int) pwm;
-
+    short int pwm1_16 = (short int) pwm1;
+	short int pwm2_16 = (short int) pwm2;
+	
     // Check for a valid power input (boundaries for motor control)
-    if (pwm < -10000) {
-        printf("min is -10000, %d is invalid\n",pwm);
+    if ((pwm1 < -10000) || (pwm2 < -10000)) {
+        printf("Error: min power input is -10000\n");
         exit(1);
     }
-    if (pwm > 10000) {
-        printf("max is 10000, %d is invalid\n",pwm);
+    if ((pwm1 > 10000) || (pwm2 > 10000)) {
+        printf("Error: max power input is 10000\n");
         exit(1);
     }
 
     // Set power to motor 1
-    putByte(fd, 0x02, ((unsigned char)(pwm16 & 0xff)));
-    putByte(fd, 0x03, ((unsigned char)((pwm16 >> 8) & 0xff)));
+    putByte(fd, 0x02, ((unsigned char)(pwm1_16 & 0xff)));
+    putByte(fd, 0x03, ((unsigned char)((pwm1_16 >> 8) & 0xff)));
 
     // Set power to motor 2
-    putByte(fd, 0x04, ((unsigned char)(pwm16 & 0xff)));
-    putByte(fd, 0x05, ((unsigned char)((pwm16 >> 8) & 0xff)));
+    putByte(fd, 0x04, ((unsigned char)(pwm2_16 & 0xff)));
+    putByte(fd, 0x05, ((unsigned char)((pwm2_16 >> 8) & 0xff)));
    
-    printf("Setting pwm to %d\n", pwm); 
+    printf("Setting pwm1 to %d and pwm2 to %d\n", pwm1, pwm2); 
     // Send the set motor power 1 and 2 command
     putByte(fd, 0xff, 0x03);
 }
@@ -510,7 +508,7 @@ unsigned int getTargetPos(int fd, unsigned int motor)
 // Parameters: fd - connection to the board (value returned from DMCCstart)
 //             motor - motor number desired
 //             position - motor position
-void setTargetPos(int fd, unsigned int motor, unsigned int pos)
+void setTargetPos(int fd, unsigned int motor, int pos)
 {
     unsigned char start;
 
@@ -538,22 +536,23 @@ void setTargetPos(int fd, unsigned int motor, unsigned int pos)
     putByte(fd, 0xff, ((unsigned char) motor)); 
 }
 
-// setAllTargetPos - Sets the target position for all motors
+// setAllTargetPos - Sets the target position for both motors
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             position - motor position
-void setAllTargetPos(int fd, unsigned int pos)
+//             pos1 - motor 1 position
+//             pos2 - motor 2 position
+void setAllTargetPos(int fd, int pos1, int pos2)
 {
     // Write the new target position to the first motor
-    putByte(fd, 0x20, ((unsigned char)(pos & 0xff)));
-    putByte(fd, 0x21, ((unsigned char)((pos >> 8) & 0xff)));
-    putByte(fd, 0x22, ((unsigned char)((pos >> 16) & 0xff)));
-    putByte(fd, 0x23, ((unsigned char)((pos >> 24) & 0xff))); 
+    putByte(fd, 0x20, ((unsigned char)(pos1 & 0xff)));
+    putByte(fd, 0x21, ((unsigned char)((pos1 >> 8) & 0xff)));
+    putByte(fd, 0x22, ((unsigned char)((pos1 >> 16) & 0xff)));
+    putByte(fd, 0x23, ((unsigned char)((pos1 >> 24) & 0xff))); 
 
     // Write the new target position to the second motor
-    putByte(fd, 0x24, ((unsigned char)(pos & 0xff)));
-    putByte(fd, 0x25, ((unsigned char)((pos >> 8) & 0xff)));
-    putByte(fd, 0x26, ((unsigned char)((pos >> 16) & 0xff)));
-    putByte(fd, 0x27, ((unsigned char)((pos >> 24) & 0xff)));
+    putByte(fd, 0x24, ((unsigned char)(pos2 & 0xff)));
+    putByte(fd, 0x25, ((unsigned char)((pos2 >> 8) & 0xff)));
+    putByte(fd, 0x26, ((unsigned char)((pos2 >> 16) & 0xff)));
+    putByte(fd, 0x27, ((unsigned char)((pos2 >> 24) & 0xff)));
 
     // Send the command to start the PID mode
     putByte(fd, 0xff, 0x13);
@@ -610,18 +609,20 @@ void setTargetVel(int fd, unsigned int motor, int vel)
 
 // setAllTargetVel - Sets the target velocity for all motors
 // Parameters: fd - connection to the board (value returned from DMCCstart)
-//             velocity - motor velocity
-void setAllTargetVel(int fd, int vel)
+//             vel1 - motor 1 velocity
+//             vel2 - motor 2 velocity
+void setAllTargetVel(int fd, int vel1, int vel2)
 {
-    short int vel16 = (short int) vel;
+    short int vel1_16 = (short int) vel1;
+    short int vel2_16 = (short int) vel2;
 
     // Write the new target velocity for the first motor
-    putByte(fd, 0x28, ((unsigned char)(vel16 & 0xff)));
-    putByte(fd, 0x29, ((unsigned char)((vel16 >> 8) & 0xff)));
+    putByte(fd, 0x28, ((unsigned char)(vel1_16 & 0xff)));
+    putByte(fd, 0x29, ((unsigned char)((vel1_16 >> 8) & 0xff)));
 
     // Write the new target velocity for the second motor
-    putByte(fd, 0x2A, ((unsigned char)(vel16 & 0xff)));
-    putByte(fd, 0x2B, ((unsigned char)((vel16 >> 8) & 0xff)));
+    putByte(fd, 0x2A, ((unsigned char)(vel2_16 & 0xff)));
+    putByte(fd, 0x2B, ((unsigned char)((vel2_16 >> 8) & 0xff)));
 
 	// Send the command to start the PID mode
     putByte(fd, 0xff, 0x23);
@@ -671,23 +672,25 @@ void DMCCwaitSec(unsigned int seconds)
     usleep(seconds*1000000);
 }
 
-void moveUntilTime(int fd, unsigned int time, 
-                        unsigned int motor, unsigned int power)
+void moveUntilTime(int fd, unsigned int motor, int pwm, unsigned int time)
 {
     if ((motor != 1) && (motor != 2)) {
         printf("Error: invalid motor number\n");
         return;
     }
-    setMotorPower(fd, motor, power);
+    setMotorPower(fd, motor, pwm);
     usleep(time);
     setMotorPower(fd, motor, 0);
 }
 
-void moveUntilPos(int fd, unsigned int motor, unsigned int pos)
+int moveUntilPos(int fd, unsigned int motor, int pos, unsigned int tLimit)
 {
-    // Set the target position desired
-    setTargetPos(fd, pos, motor);
-
+	if (tLimit > 2147) {
+        printf("Error: too long a time limit");
+        printf(" (must be less than 2147 seconds)\n");
+		return -1;
+    }
+	
     // Threshold value for QEI
     int threshold;
     
@@ -697,7 +700,7 @@ void moveUntilPos(int fd, unsigned int motor, unsigned int pos)
         threshold = QEI_Threshold_2;
     } else {
         printf("Error: invalid motor number\n");
-        return;
+        return -1;
     }
 
     // Motor timeout (if the motor does not reach the desired position)
@@ -706,33 +709,51 @@ void moveUntilPos(int fd, unsigned int motor, unsigned int pos)
     time(&currentTime);
 
     // Error value
-    int error = (int)(getTargetPos(fd, motor)) - (int)(getQEI(fd, motor));
-    if (error < 0) {
-        error *= -1;
-    }
+    int error = abs(pos - (int)(getQEI(fd, motor)));
+
+    // Current value for motor
+    int current = getMotorCurrent(fd, motor); 
+
+    // Count for print statement
+    int count = 0;
+    printf("Error = %d, Current = %u\n", error, current);
+
+    // Set the target position desired
+    setTargetPos(fd, motor, pos); 
 
     // Wait until the motor has reached the desired position or timeout
     while (error > threshold) {
         // Check if have waited longer than maximum time limit
-        if ((currentTime - startTime) > TIME_LIMIT) {
-            break;
+        if ((currentTime - startTime) > tLimit) {
+			printf("Could not reach desired target within time alloted\n");
+            return -1;
         }
         time(&currentTime);
 
         // Get error between QEI target position and current position
-        error = (int)(getTargetPos(fd, motor)) - (int)(getQEI(fd, motor));
-        if (error < 0) {
-            error *= -1;
+        error = abs(pos - (int)(getQEI(fd, motor)));
+
+        // Print out the error and current readings for the user
+        if (count == 100){
+            count = 0;
+            current = getMotorCurrent(fd, motor);
+            printf("Error = %d, Current = %u\n", error, current);
         }
-        // printf("Error = %d\n", error);
-    }
+        count++;
+	}
+    printf("Position at %d reached\n", pos);
+	return 0;
 }
 
-void moveUntilVel(int fd, unsigned int motor, int vel)
+int moveUntilVel(int fd, unsigned int motor, int vel, unsigned int tLimit)
 {
-    // Set the target speed desired
-    setTargetVel(fd, vel, motor);
-
+	// Check time limit allowed values
+	if (tLimit > 2147) {
+        printf("Error: too long a time limit");
+        printf(" (must be less than 2147 seconds)\n");
+		return -1;
+    }
+	
     // Set threshold values
     int threshold;
 
@@ -742,7 +763,7 @@ void moveUntilVel(int fd, unsigned int motor, int vel)
         threshold = QEI_Vel_Threshold_2;
     } else {
         printf("Error: invalid motor number\n");
-        return;
+        return -1;
     }
 
     // Motor timeout (if the motor does not reach the desired velocity)
@@ -751,112 +772,157 @@ void moveUntilVel(int fd, unsigned int motor, int vel)
     time(&currentTime);
 
     // Error value
-    int error = (int)(getTargetVel(fd, motor)) - (int)(getQEIVel(fd, motor));
-    if (error < 0) {
-        error *= -1;
-    }
+    int error = abs(vel - (int)(getQEIVel(fd, motor)));
 
-    DMCCwaitSec(2);
+    // Current value for motor
+    int current = getMotorCurrent(fd, motor);
+
+    // Count for the print statement
+    int count = 0;
+    printf("Error = %d, Current = %u\n", error, current);
+
+    // Set the target speed desired
+    setTargetVel(fd, motor, vel);
 
     // Wait until the motor has reached the desired position or timeout
     while (error > threshold) {
-        if ((currentTime - startTime) > TIME_LIMIT) {
-            break;
+        if ((currentTime - startTime) > tLimit) {
+            printf("Could not reach desired target within time alloted\n");
+            return -1;
         }
         time(&currentTime);
 
-        error = (int)(getTargetVel(fd, motor)) - (int)(getQEIVel(fd, motor));
-        if (error < 0) {
-            error *= -1;
+        error = abs(vel - (int)(getQEIVel(fd, motor)));
+        
+        // Print out the error and current readings for the user
+        if (count == 100){
+            count = 0;
+            current = getMotorCurrent(fd, motor);
+            printf("Error = %d, Current = %u\n", error, current);
         }
+        count++;
     }
+    printf("Velocity at %d reached\n", vel);
+	return 0;
 }
 
-void moveAllUntilPos(int fd, unsigned int pos)
+int moveAllUntilPos(int fd, int pos1, int pos2, unsigned int tLimit)
 {
-    // Set the new target position for both motors
-    setAllTargetPos(fd, pos);
-
+	// Check time limit allowed values
+	if (tLimit > 2147) {
+        printf("Error: too long a time limit");
+        printf(" (must be less than 2147 seconds)\n");
+		return -1;
+    }
+	
     // Motor timeout (if the motor does not reach the desired velocity)
     time_t startTime, currentTime;
     time(&startTime);
     time(&currentTime);
 
     // Error value
-    int error1 = (int)(getTargetPos(fd,1)) - (int)(getQEI(fd, 1));
-    if (error1 < 0) {
-        error1 *= -1;
-    }
-    int error2 = (int)(getTargetPos(fd,2)) - (int)(getQEI(fd, 2));
-    if (error2 < 0) {
-        error2 *= -1;
-    }
+    int error1 = abs(pos1 - (int)(getQEI(fd, 1)));
+    int error2 = abs(pos2 - (int)(getQEI(fd, 2)));
+
+    // Current given to motors
+    int curr1 = getMotorCurrent(fd, 1);
+    int curr2 = getMotorCurrent(fd, 2);
+
+    // Count for the print statements
+    int count = 0;
+    printf("Error1 = %d, Error2 = %d, Current1 = %u, Current2 = %u\n",
+                        error1, error2, curr1, curr2);
+
+    // Set the new target position for both motors
+    setAllTargetPos(fd, pos1, pos2);
 
     // Wait until both motors are within the desired threshold or timeout
     while ((error1 > QEI_Threshold_1) || (error2 > QEI_Threshold_2)) {
         // Check if the time limit for the motors has been passed
-        if ((currentTime - startTime) > TIME_LIMIT) {
-            break;
+        if ((currentTime - startTime) > tLimit) {
+            printf("Could not reach desired target within time alloted\n");
+            return -1;
         }
         time(&currentTime);
 
-        error1 = (int)(getTargetPos(fd,1)) - (int)(getQEI(fd, 1));
-        if (error1 < 0) {
-            error1 *= -1;
-        }
-        error2 = (int)(getTargetPos(fd,2)) - (int)(getQEI(fd, 2));
-        if (error2 < 0) {
-            error2 *= -1;
-        }
+        error1 = abs(pos1 - (int)(getQEI(fd, 1)));
+        error2 = abs(pos2 - (int)(getQEI(fd, 2)));
 
+        // Print out the error and current readings for the user
+        if (count == 100){
+            count = 0;
+            curr1 = getMotorCurrent(fd, 1);
+            curr2 = getMotorCurrent(fd, 2);
+            printf("Error1 = %d, Error2 = %d, Current1 = %u, Current2 = %u\n", 
+                        error1, error2, curr1, curr2);
+        }
+        count++;
     }
+    printf("Position 1 at %d and position 2 at %d reached\n", pos1, pos2);
+	return 0;
 }
 
-void moveAllUntilVel(int fd, int vel)
+int moveAllUntilVel(int fd, int vel1, int vel2, unsigned int tLimit)
 {
-    // Set the new target velocity for both motors
-    setAllTargetVel(fd, vel);
-
+	// Check time limit allowed values
+	if (tLimit > 2147) {
+        printf("Error: too long a time limit");
+        printf(" (must be less than 2147 seconds)\n");
+		return -1;
+    }
+	
     // Motor timeout (if the motor does not reach the desired velocity)
     time_t startTime, currentTime;
     time(&startTime);
     time(&currentTime);
 
     // Error value
-    int error1 = (int)(getTargetVel(fd,1)) - (int)(getQEIVel(fd, 1));
-    if (error1 < 0) {
-        error1 *= -1;
-    }
-    int error2 = (int)(getTargetVel(fd,2)) - (int)(getQEIVel(fd, 2));
-    if (error2 < 0) {
-        error2 *= -1;
-    }
+    int error1 = abs(vel1 - (int)(getQEIVel(fd, 1)));
+    int error2 = abs(vel2 - (int)(getQEIVel(fd, 2)));
+
+    // Current given to motors
+    int curr1 = getMotorCurrent(fd, 1);
+    int curr2 = getMotorCurrent(fd, 2);
+
+    // Count for print statements
+    int count = 0;
+    printf("Error1 = %d, Error2 = %d, Current1 = %u, Current2 = %u\n",
+                error1, error2, curr1, curr2);
+
+    // Set the new target velocity for both motors
+    setAllTargetVel(fd, vel1, vel2);
 
     // Wait until both motors are within the desired threshold or timeout
     while ((error1 > QEI_Vel_Threshold_1) || (error2 > QEI_Vel_Threshold_2)) {
         // Check if the time limit for the motors has been passed
-        if ((currentTime - startTime) > TIME_LIMIT) {
-            break;
+        if ((currentTime - startTime) > tLimit) {
+            printf("Could not reach desired target within time alloted\n");
+            return -1;
         }
         time(&currentTime);
 
-        error1 = (int)(getTargetVel(fd,1)) - (int)(getQEIVel(fd, 1));
-        if (error1 < 0) {
-            error1 *= -1;
+        error1 = abs(vel1 - (int)(getQEIVel(fd, 1)));
+        error2 = abs(vel2 - (int)(getQEIVel(fd, 2)));
+        
+        // Print out the error and current readings for the user
+        if (count == 100){
+            count = 0;
+            curr1 = getMotorCurrent(fd, 1);
+            curr2 = getMotorCurrent(fd, 2);
+            printf("Error1 = %d, Error2 = %d, Current1 = %u, Current2 = %u\n", 
+                error1, error2, curr1, curr2);
         }
-        error2 = (int)(getTargetVel(fd,2)) - (int)(getQEIVel(fd, 2));
-        if (error2 < 0) {
-            error2 *= -1;
-        }
-
+        count++;
     }
+    printf("Velocity 1 at %d and velocity 2 at %d reached\n", vel1, vel2);
+	return 0;
 }
 
-void moveAllUntilTime(int fd, unsigned int power, unsigned int time)
+void moveAllUntilTime(int fd, int pwm1, int pwm2, unsigned int time)
 {
-    setAllMotorPower(fd, power);
+    setAllMotorPower(fd, pwm1, pwm2);
     usleep(time);
-    setAllMotorPower(fd, 0);
+    setAllMotorPower(fd, 0, 0);
 }
 
 // returnPIDConstants - gets the PID constants starting at the addr (helper)
