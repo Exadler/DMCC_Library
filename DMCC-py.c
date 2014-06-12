@@ -125,6 +125,46 @@ dmcc_getMotorVoltage(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+dmcc_getMotorCurrent(PyObject *self, PyObject *args)
+{
+    int nBoard;
+    int nMotor;
+    // Make sure szErrorMsg is not on the stack
+    // -- downside is that we could have concurrency issues with different
+    // threads, but you know what, there should only be one error message
+    // at a time.  If you have it from multiple threads, your code is fubar'ed
+    // anyways!
+    static char szErrorMsg[80];
+
+    // DMCC.getMotorCurrent takes 2 arguments: board number, motor number
+    if (!PyArg_ParseTuple(args, "ii:getQEI", &nBoard, &nMotor)) {
+        return NULL;
+    }
+    // validate the board number
+    if ((nBoard < 0) || (nBoard > 3)) {
+        sprintf(szErrorMsg, "Board number %d is invalid.  Board number must be between 0 and 3.",
+                nBoard);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+    // validate the motor number
+    if ((nMotor < 1) || (nMotor > 2)) {
+        sprintf(szErrorMsg, "Motor number %d is invalid.  Motor number must be 1 or 2.",
+                nMotor);
+        PyErr_SetString(PyExc_IndexError,szErrorMsg);
+        return NULL;
+    }
+
+    int session;
+    unsigned int current;
+    session = DMCCstart(nBoard);
+    current = getMotorCurrent(session,nMotor);
+    DMCCend(session);
+
+    return Py_BuildValue("i", current);
+}
+
+static PyObject *
 dmcc_getQEI(PyObject *self, PyObject *args)
 {
     int nBoard;
@@ -377,6 +417,7 @@ module_functions[] = {
     { "setMotor", dmcc_setMotor, METH_VARARGS, "Set motor (board, motorNum, power)" },
     { "getMotorVoltage", dmcc_getMotorVoltage, METH_VARARGS, "Gets the Voltage (board)" },
     { "getMotorVoltageInt", dmcc_getMotorVoltageInt, METH_VARARGS, "Gets the Voltage (board) as int" },
+    { "getMotorCurrent", dmcc_getMotorCurrent, METH_VARARGS, "Gets the current on a motor" },
     { "getQEI", dmcc_getQEI, METH_VARARGS, "Return the Quadrature Encoder value of the given (board, motor)" },
     { "getQEIVel", dmcc_getQEIVel, METH_VARARGS, "Return the Quadrature Encoder Velocity of the given (board, motor)" },
     { "setPIDConstants", dmcc_setPIDConstants, METH_VARARGS, "Set the PID constants (board, motor, posOrVel, P, I, D)" },
