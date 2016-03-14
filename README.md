@@ -6,6 +6,12 @@ Code library for the beaglebone DMCC (Dual Motor Controller Cape)
 You can find the open source hardware (schematics, PCB, Eagle files) at
 https://github.com/Exadler/DualMotorControlCape
 
+
+Added setPIDPowerLimits function to setup Power limits when running PID.  
+**Only works with new Mk.07 firmware -- older firmware versions will
+  just ignore the command and keep functioning.
+
+
 This version includes preliminary code for the python interface.
 
 To use the python interface, run the following commands on your Beaglebone:
