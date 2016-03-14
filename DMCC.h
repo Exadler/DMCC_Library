@@ -322,4 +322,15 @@ void setPIDConstants(int fd, unsigned int motor, unsigned int posOrVel,
 //
 void setDefaultPIDConstants(int fd);
 
+// setPIDPowerLimits -  Set a limit on the max power that will be set on the 
+//			motors when the DMCC is operating in PID mode
+// Parameters: fd - connection to the board (value returned from DMCCstart)
+//             pidLimit1 - power limit for motor 1.  1-10000.  Set to 0 for no
+//			   limit.
+//             pidLimit2 - power limit for motor 2.  1-10000.  Set to 0 for no
+//			   limit.
+//
+//
+void setPIDPowerLimits(int fd, unsigned int pidLimit1, unsigned int pidLimit2);
+
 #endif

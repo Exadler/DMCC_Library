@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2013 - Exadler Technologies Inc., Sarah Tan
+// Copyright (C) 2013-2016 - Exadler Technologies Inc., Sarah Tan
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -32,7 +32,7 @@
 
 #include "DMCC.h"
 
-char *Compatible_Versions[] = {"05", "06"};
+char *Compatible_Versions[] = {"05", "06", "07", NULL};
 
 // ------------------------
 // Threshold Values Depending on Encoder
@@ -246,7 +246,7 @@ int checkID(int fd, int version)
     if (v != version) {
         printf("Error: Board and board base software are not the same\n");
         free(ID);
-        return -1;
+        return v;
     }
 
     // Check that the version number is compatible
@@ -437,7 +437,7 @@ void setMotorPower(int fd, unsigned int motor, int pwm)
 void setAllMotorPower(int fd, int pwm1, int pwm2)
 {
     short int pwm1_16 = (short int) pwm1;
-	short int pwm2_16 = (short int) pwm2;
+    short int pwm2_16 = (short int) pwm2;
 	
     // Check for a valid power input (boundaries for motor control)
     if ((pwm1 < -10000) || (pwm2 < -10000)) {
@@ -1025,4 +1025,20 @@ void setPIDConstants(int fd, unsigned int motor, unsigned int posOrVel,
     } else {
         printf("Error: invalid motor number specified\n");
     }
+}
+
+void setPIDPowerLimits(int fd, unsigned int pidLimit1, unsigned int pidLimit2)
+{
+    if (pidLimit1 > 10000) {
+        pidLimit1 = 10000;
+    }
+    if (pidLimit2 > 10000) {
+        pidLimit2 = 10000;
+    }
+    putByte(fd, (0x08), (unsigned char) (pidLimit1 & 0xff));
+    putByte(fd, (0x09), (unsigned char) ((pidLimit1 & 0xff00) >> 8));
+    
+    putByte(fd, (0x0a), (unsigned char) (pidLimit2 & 0xff));
+    putByte(fd, (0x0b), (unsigned char) ((pidLimit2 & 0xff00) >> 8));
+
 }
